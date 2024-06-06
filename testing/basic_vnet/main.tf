@@ -18,6 +18,18 @@ module "vnet" {
 
 }
 
+
+
 module "internal" {
     source = "./modules"
+}
+
+module "label" {
+  source  = "cloudposse/label/null"
+  version = "0.25.0"
+  enabled = false
+  environment = "dev"
+  name = "taco"
+  stage = "dev"
+  namespace = "nc"
 }
