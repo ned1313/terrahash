@@ -34,6 +34,10 @@ type moduleEntry struct {
 }
 
 type modules struct {
+	Modules map[string]moduleEntry `json:"Modules"`
+}
+
+type modulesFile struct {
 	Modules []moduleEntry `json:"Modules"`
 }
 
@@ -80,8 +84,9 @@ func terraformInitialized(path string) error {
 
 func processModules(path string) (modules, error) {
 	slog.Debug("get the modules used by the configuration")
-	    var mods modules
+	    var mods modulesFile
 		var sourcedMods modules
+		sourcedMods.Modules = make(map[string]moduleEntry)
 
 		moduleFile, err := os.Open(path + ".terraform/modules/modules.json")
 		if err != nil {
@@ -104,13 +109,13 @@ func processModules(path string) (modules, error) {
 			// All downloaded modules will reside in the .terraform/modules directory
 			if strings.Split(m.Dir, "/")[0] != ".terraform" {
 				slog.Info("skipping module: " + m.Key)
-			} else {
-				// Add a hash based on Dir contents
+			}else{
+			// Add a hash based on Dir contents
 				hash, err := hashdir.Make(path+m.Dir, "sha256")
 				if err != nil {
 					return sourcedMods, fmt.Errorf("could not create hash for %v: %v", m.Key, err)
 				}
-				slog.Debug("hash generated: " + hash)
+				slog.Info("hash generated: " + hash)
 				newMod := moduleEntry{
 					Key:     m.Key,
 					Dir:     m.Dir,
@@ -118,7 +123,11 @@ func processModules(path string) (modules, error) {
 					Source:  m.Source,
 					Hash:    hash,
 				}
-				sourcedMods.Modules = append(sourcedMods.Modules, newMod)
+				// The root module shows up as an empty string
+				if m.Key != "" {
+					slog.Info("adding module: " + m.Key)
+				  sourcedMods.Modules[m.Key] = newMod
+				}
 			}
 		}
 
