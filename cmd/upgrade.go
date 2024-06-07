@@ -57,25 +57,23 @@ var upgradeCmd = &cobra.Command{
 		}
 
 		var updateMods modules
+		updateMods.Modules = make(map[string]moduleEntry)
 		//Cycle through each sourceMod
-		for _, s := range sourcedMods.Modules {
-			var matchFound bool = false
-			//Check if the matching module is in the lockedMods
-			for _, l := range lockedMods.Modules {
-				if l.Key == s.Key && l.Source == s.Source {
-					matchFound = true
-					if l.Hash != s.Hash {
-						slog.Info("updating hash for module " + s.Key)
-					}else{
-						slog.Debug("no change to module " + s.Key)
-					}
-					break
+		// All source Mods will be added to the updateMods variable
+		// Logging provides context on what is changing
+		// TODO: Add support for single module upgrades
+		for k, s := range sourcedMods.Modules {
+			l, ok := lockedMods.Modules[k]
+			if ok {
+				if l.Hash != s.Hash || l.Version != s.Version {
+					slog.Info("updating hash or version for module " + k)
+				}else{
+					slog.Info("no change to module " + k)
 				}
+			}else{
+				slog.Info("adding new module " + k)
 			}
-			if !matchFound {
-				slog.Info("adding new module " + s.Key)
-			}
-			updateMods.Modules = append(updateMods.Modules, s)
+			updateMods.Modules[k] = s
 		}
 
 		// Write out new mod lock file to path

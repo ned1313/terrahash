@@ -59,26 +59,32 @@ var checkCmd = &cobra.Command{
 
 		// Compare the two files
 		// For each entry in sourcedMods, check if an existing entry exists in lockedMods
-		var notFoundMods, noMatchMods modules
-		for _,s := range sourcedMods.Modules {
-			var modFound bool = false
-			for _,l := range lockedMods.Modules {
-				if s.Key == l.Key {
-					modFound = true
-					if s.Hash != l.Hash {
-						noMatchMods.Modules = append(noMatchMods.Modules, s)
-					}
-					break
+		var notFoundMods, noMatchHash modules
+		notFoundMods.Modules = make(map[string]moduleEntry)
+		noMatchHash.Modules = make(map[string]moduleEntry)
+		
+		for k, s := range sourcedMods.Modules {
+			// See if module is found in lockedMods
+			l, ok := lockedMods.Modules[k]
+			// If the module is found, check the Hash
+			if ok {
+				// If the hash or version doesn't match, add it to noMatchHash
+				if s.Hash != l.Hash || s.Version != l.Version {
+					slog.Debug("adding" + k + "to no match" )
+				  noMatchHash.Modules[k] = s
+			    }else{
+					slog.Debug(k + "hashes and versions match")
 				}
-			}
-			if !modFound {
-				notFoundMods.Modules = append(notFoundMods.Modules, s)
+			}else{
+				// If the entry isn't found, add it to notFoundMods
+				slog.Debug("adding" + k + "to not found")
+				notFoundMods.Modules[k] = s
 			}
 		}
 
-		if len(noMatchMods.Modules) > 0 {
+		if len(noMatchHash.Modules) > 0 {
 			fmt.Println("Non matching modules were found:")
-			bytes, _ := json.MarshalIndent(noMatchMods.Modules, "", "  ")
+			bytes, _ := json.MarshalIndent(noMatchHash.Modules, "", "  ")
 			fmt.Println(string(bytes))
 			fmt.Println("You may wish to update the module lock file using the upgrade command.")
 		}
@@ -90,7 +96,7 @@ var checkCmd = &cobra.Command{
 			fmt.Println("You may wish to add these modules using the upgrade command.")
 		}
 
-		if len(noMatchMods.Modules) > 0 || len(notFoundMods.Modules) > 0 {
+		if len(noMatchHash.Modules) > 0 || len(notFoundMods.Modules) > 0 {
 			return fmt.Errorf("non matching or missing modules found in the configuration")
 		}
 
