@@ -152,3 +152,30 @@ func processModFile(path string) (modules, error){
 		}
 		return mods, nil
 }
+
+func checkInit(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func setPath(path string) (string, error) {
+	var setPath string
+	if path == "" {
+		setPath , err := os.Getwd()
+		if err != nil {
+			return path, fmt.Errorf("unable to find the current working directory: %v", err)
+		}
+		slog.Info("working path set to current directory: " + setPath)
+		return (setPath + "/"), nil
+	} else {
+		setPath = path
+		slog.Info("working path set to source directory: " + setPath)
+	}
+	// If the path doesn't end with a '/' add it
+	if strings.HasSuffix(strings.TrimSpace(setPath), "/") {
+		slog.Info("trailing slash found in " + setPath)
+		return setPath, nil
+	}
+	slog.Info("no trailing slash found in " + setPath)
+	return (setPath + "/"), nil
+}

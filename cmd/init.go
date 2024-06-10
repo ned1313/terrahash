@@ -21,31 +21,22 @@ var initCmd = &cobra.Command{
 	is found or the Terraform configuration hasn't been initialized yet.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		slog.Info("init command called")
-		var path string
-		// Check to see if the .terraform directory exists
-		slog.Debug("check to see if the .terraform directory exists")
-		if Source != "" {
-			path = Source
-			slog.Info("working path set to source: " + Source)
-		} else {
-			pathCwd, err := os.Getwd()
-			if err != nil {
-				return fmt.Errorf("unable to find the current working directory: %v", err)
-			}
-			slog.Info("working path set to current directory: " + pathCwd)
-			path = pathCwd
+		
+		path, err := setPath(Source)
+		if err != nil {
+			return err
 		}
 
+		slog.Debug("check to see if the .terraform directory exists")
 		if err := terraformInitialized(path); err != nil {
 			return fmt.Errorf("terraform not initialized: %v", err)
 		}
 
-		// Check to see if the mod file name file exists
 		slog.Debug("check to see if the " + modFileName + "file exists")
 		if _, err := os.Stat(path + modFileName); err == nil {
 			return fmt.Errorf("%v file already exists", modFileName)
 		}
-		// Get the modules used by the configuration
+
 		slog.Debug("get the modules used by the configuration")
 		sourcedMods, err := processModules(path)
 		if err != nil {
@@ -80,9 +71,4 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
-func checkInit(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
 }

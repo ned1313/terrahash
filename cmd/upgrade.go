@@ -21,20 +21,13 @@ var upgradeCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		slog.Info("upgrade command called")
 // Get path value
-		var path string
+		// Get path value
+		path, err := setPath(Source)
+		if err != nil {
+			return err
+		}
 		// Check to see if the .terraform directory exists
 		slog.Debug("check to see if the .terraform directory exists")
-		if Source != "" {
-			path = Source
-			slog.Info("working path set to source: " + Source)
-		} else {
-			pathCwd, err := os.Getwd()
-			if err != nil {
-				return fmt.Errorf("unable to find the current working directory: %v", err)
-			}
-			slog.Info("working path set to current directory: " + pathCwd)
-			path = pathCwd
-		}
 
 		// Make sure terraform is initialized
 		if err := terraformInitialized(path); err != nil {
