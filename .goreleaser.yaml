@@ -44,3 +44,13 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+
+release:
+  github:
+    owner: ned1313
+    name: terrahash
+
+  draft: true
+  replace_existing_draft: true
+  replace_existing_artifacts: true
+  mode: append
