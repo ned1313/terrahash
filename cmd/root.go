@@ -1,5 +1,12 @@
 /*
-Copyright © 2024 NAME HERE ned@nedinthecloud.com
+Copyright © 2024 the terrahash authors
+
+Licensed under the MIT license (the "License"); you may not
+use this file except in compliance with the License.
+
+You may obtain a copy of the License at the LICENSE file in
+the root directory of this source tree.
+
 */
 package cmd
 
@@ -63,7 +70,6 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func terraformInitialized(path string) error {
