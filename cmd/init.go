@@ -17,6 +17,7 @@ import (
 
 	"encoding/json"
 	"github.com/spf13/cobra"
+	"github.com/jedib0t/go-pretty/v6/table"
 )
 
 // initCmd represents the init command
@@ -27,7 +28,7 @@ var initCmd = &cobra.Command{
 	file if one doesn't already exist. This command will error if a mod lock file
 	is found or the Terraform configuration hasn't been initialized yet.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		slog.Info("init command called")
+		slog.Debug("init command called")
 		
 		path, err := setPath(Source)
 		if err != nil {
@@ -55,12 +56,23 @@ var initCmd = &cobra.Command{
 			return nil
 		}
 
+		tw := table.NewWriter()
+		tw.AppendHeader(table.Row{"Name","Version","Source"})
+		for _,v := range sourcedMods.Modules {
+			tw.AppendRow(table.Row{v.Key,v.Version,v.Source})
+		}
+		fmt.Println("The following modules are being added to the mod lock file:")
+		fmt.Println(tw.Render())
+
+
 		//Prepare the json to look nice
 		bytes, _ := json.MarshalIndent(sourcedMods, "", "  ")
 
 		// Create the mod lock file
 		slog.Debug("writing modules out to file")
 		os.WriteFile(path + modFileName, bytes, os.ModePerm)
+
+		fmt.Printf("\n\nSummary: %v modules added to mod lock file.\n\n", len(sourcedMods.Modules))
 
 		return nil
 	},

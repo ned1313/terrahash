@@ -6,19 +6,18 @@ use this file except in compliance with the License.
 
 You may obtain a copy of the License at the LICENSE file in
 the root directory of this source tree.
-
 */
 package cmd
 
 import (
-	"os"
-	"log/slog"
-	"fmt"
-	"strings"
 	"encoding/json"
+	"fmt"
+	"log/slog"
+	"os"
+	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/gosimple/hashdir"
+	"github.com/spf13/cobra"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -52,12 +51,15 @@ const modFileName = ".terraform.module.hcl"
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
+func Execute() error {
+	rootCmd.SilenceUsage = true
+	rootCmd.SilenceErrors = true
 	err := rootCmd.Execute()
 	if err != nil {
-		slog.Error(err.Error())
-		os.Exit(1)
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		return err
 	}
+	return nil
 }
 
 func init() {
@@ -114,14 +116,14 @@ func processModules(path string) (modules, error) {
 		for _, m := range mods.Modules {
 			// All downloaded modules will reside in the .terraform/modules directory
 			if strings.Split(m.Dir, "/")[0] != ".terraform" {
-				slog.Info("skipping module: " + m.Key)
+				slog.Debug("skipping module: " + m.Key)
 			}else{
 			// Add a hash based on Dir contents
 				hash, err := hashdir.Make(path+m.Dir, "sha256")
 				if err != nil {
 					return sourcedMods, fmt.Errorf("could not create hash for %v: %v", m.Key, err)
 				}
-				slog.Info("hash generated: " + hash)
+				slog.Debug("hash generated: " + hash)
 				newMod := moduleEntry{
 					Key:     m.Key,
 					Dir:     m.Dir,
@@ -171,17 +173,17 @@ func setPath(path string) (string, error) {
 		if err != nil {
 			return path, fmt.Errorf("unable to find the current working directory: %v", err)
 		}
-		slog.Info("working path set to current directory: " + setPath)
+		slog.Debug("working path set to current directory: " + setPath)
 		return (setPath + "/"), nil
 	} else {
 		setPath = path
-		slog.Info("working path set to source directory: " + setPath)
+		slog.Debug("working path set to source directory: " + setPath)
 	}
 	// If the path doesn't end with a '/' add it
 	if strings.HasSuffix(strings.TrimSpace(setPath), "/") {
-		slog.Info("trailing slash found in " + setPath)
+		slog.Debug("trailing slash found in " + setPath)
 		return setPath, nil
 	}
-	slog.Info("no trailing slash found in " + setPath)
+	slog.Debug("no trailing slash found in " + setPath)
 	return (setPath + "/"), nil
 }
