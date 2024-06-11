@@ -11,11 +11,11 @@ the root directory of this source tree.
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 
 	"github.com/spf13/cobra"
+	"github.com/jedib0t/go-pretty/v6/table"
 )
 
 // checkCmd represents the check command
@@ -26,7 +26,7 @@ var checkCmd = &cobra.Command{
 	mod lock file. Will return an error if the hash for found modules do not match or if a module 
 	is not found in the lock file.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		slog.Info("check command called")
+		slog.Debug("check command called")
 		// Get path value
 		path, err := setPath(Source)
 		if err != nil {
@@ -82,24 +82,33 @@ var checkCmd = &cobra.Command{
 		}
 
 		if len(noMatchHash.Modules) > 0 {
-			fmt.Println("Non matching modules were found:")
-			bytes, _ := json.MarshalIndent(noMatchHash.Modules, "", "  ")
-			fmt.Println(string(bytes))
-			fmt.Println("You may wish to update the module lock file using the upgrade command.")
+			tw := table.NewWriter()
+			tw.SetTitle("Non Matching Modules")
+			tw.AppendHeader(table.Row{"Name","Version","Source"})
+			for _,v := range noMatchHash.Modules {
+				tw.AppendRow(table.Row{v.Key,v.Version,v.Source})
+			}
+			fmt.Println(tw.Render())
+			fmt.Print("You can update these modules with the upgrade command.\n\n")
 		}
 
 		if len(notFoundMods.Modules) > 0 {
-			fmt.Println("The following modules were not found in the lock file:")
-			bytes, _ := json.MarshalIndent(notFoundMods.Modules, "", "  ")
-			fmt.Println(string(bytes))
-			fmt.Println("You may wish to add these modules using the upgrade command.")
+			tw := table.NewWriter()
+			tw.SetTitle("Missing Modules")
+			tw.AppendHeader(table.Row{"Name","Version","Source"})
+			for _,v := range notFoundMods.Modules {
+				tw.AppendRow(table.Row{v.Key,v.Version,v.Source})
+			}
+			fmt.Println(tw.Render())
+			fmt.Print("You can add these modules with the upgrade command.\n\n")
 		}
 
 		if len(noMatchHash.Modules) > 0 || len(notFoundMods.Modules) > 0 {
+			fmt.Printf("\nSummary: %v modules mising, %v non matching modules\n\n", len(notFoundMods.Modules), len(noMatchHash.Modules))
 			return fmt.Errorf("non matching or missing modules found in the configuration")
 		}
 
-		slog.Info("all modules match the lock file")
+		fmt.Println("All modules match the mod lock file")
 		return nil
 
 	},
