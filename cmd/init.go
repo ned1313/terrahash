@@ -35,14 +35,28 @@ var initCmd = &cobra.Command{
 			return err
 		}
 
-		slog.Debug("check to see if the .terraform directory exists")
-		if err := terraformInitialized(path); err != nil {
-			return fmt.Errorf("terraform not initialized: %v", err)
+		slog.Debug("check to see if terraform has been initialized")
+		msg, init := terraformInitialized(path)
+
+		if !init {
+			slog.Warn(msg)
+			slog.Warn("has terraform init been run?")
+			return nil
 		}
 
+		// If the modFile already exists, run a check to see if any changes
+		// are required, otherwise create the modFile
 		slog.Debug("check to see if the " + modFileName + "file exists")
 		if _, err := os.Stat(path + modFileName); err == nil {
-			return fmt.Errorf("%v file already exists", modFileName)
+			fmt.Println("Existing mod lock file found")
+			checkErr := check(path)
+			if checkErr != nil {
+				slog.Error("Changes detected between configuration and lock file")
+				slog.Error(checkErr.Error())
+				return fmt.Errorf("run terrhash upgrade to update the mod lock file")
+			}
+			fmt.Println("No changes to mod lock file required")
+			return nil
 		}
 
 		slog.Debug("get the modules used by the configuration")

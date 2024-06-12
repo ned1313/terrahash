@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -37,12 +38,14 @@ var upgradeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		// Check to see if the .terraform directory exists
-		slog.Debug("check to see if the .terraform directory exists")
 
-		// Make sure terraform is initialized
-		if err := terraformInitialized(path); err != nil {
-			return fmt.Errorf("terraform not initialized: %v", err)
+		slog.Debug("check to see if terraform has been initialized")
+		msg, init := terraformInitialized(path)
+
+		if !init {
+			slog.Warn(msg)
+			slog.Warn("has terraform init been run?")
+			return nil
 		}
 
 		// Load the sourced modules
@@ -112,8 +115,9 @@ var upgradeCmd = &cobra.Command{
 		if !autoApprove {
 		fmt.Print("Confirm changes by entering yes: ")
 		var in = bufio.NewReader(os.Stdin)
-		name, _ := in.ReadString('\n')
-		if strings.TrimSpace(name) != "yes" {
+		confirm := []string{"yes","y","Yes","Y"}
+		resp, _ := in.ReadString('\n')
+		if !(slices.Contains(confirm, strings.TrimSpace(resp))){
 			slog.Debug("changes not accepted for mod lock file update")
 			return fmt.Errorf("changes not accepted for mod lock file update")
 		}
