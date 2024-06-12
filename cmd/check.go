@@ -33,15 +33,22 @@ var checkCmd = &cobra.Command{
 			return err
 		}
 
-		// Check to see if the .terraform directory exists
-		slog.Debug("check to see if the .terraform directory exists")
+		slog.Debug("check to see if terraform has been initialized")
+		msg, init := terraformInitialized(path)
 
-		// Make sure terraform is initialized
-		if err := terraformInitialized(path); err != nil {
-			return fmt.Errorf("terraform not initialized: %v", err)
+		if !init {
+			slog.Warn(msg)
+			slog.Warn("has terraform init been run?")
+			return nil
 		}
 
-		// Load the sourced modules
+		return check(path)
+
+	},
+}
+
+func check(path string) error {
+// Load the sourced modules
 		// Get the modules used by the configuration
 		slog.Debug("get the modules used by the configuration")
 		sourcedMods, err := processModules(path)
@@ -110,8 +117,6 @@ var checkCmd = &cobra.Command{
 
 		fmt.Println("All modules match the mod lock file")
 		return nil
-
-	},
 }
 
 func init() {

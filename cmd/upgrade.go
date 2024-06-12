@@ -38,12 +38,14 @@ var upgradeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		// Check to see if the .terraform directory exists
-		slog.Debug("check to see if the .terraform directory exists")
 
-		// Make sure terraform is initialized
-		if err := terraformInitialized(path); err != nil {
-			return fmt.Errorf("terraform not initialized: %v", err)
+		slog.Debug("check to see if terraform has been initialized")
+		msg, init := terraformInitialized(path)
+
+		if !init {
+			slog.Warn(msg)
+			slog.Warn("has terraform init been run?")
+			return nil
 		}
 
 		// Load the sourced modules

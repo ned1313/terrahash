@@ -74,20 +74,20 @@ func init() {
 	// when this action is called directly.
 }
 
-func terraformInitialized(path string) error {
+func terraformInitialized(path string) (string, bool) {
 	// Check to see if Terraform has been initialized
 	slog.Debug("checking to see if Terraform has been initialized")
 	if !checkInit(path + ".terraform") {
-		return fmt.Errorf("terraform has not been initialized")
+		return ".terraform directory was not found", false
 	}
 
 	//Check to see if the modules.json file exists
 	slog.Debug("check to see if the modules.json file exists")
 	if _, err := os.Stat(path + ".terraform/modules/modules.json"); err != nil {
-		return fmt.Errorf("no modules found in .terraform/modules directory: %v", err)
+		return "modules.json file was not found", false
 	}
 
-	return nil
+	return "terraform has been initialized", true
 }
 
 func processModules(path string) (modules, error) {
