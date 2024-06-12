@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -112,8 +113,9 @@ var upgradeCmd = &cobra.Command{
 		if !autoApprove {
 		fmt.Print("Confirm changes by entering yes: ")
 		var in = bufio.NewReader(os.Stdin)
-		name, _ := in.ReadString('\n')
-		if strings.TrimSpace(name) != "yes" {
+		confirm := []string{"yes","y","Yes","Y"}
+		resp, _ := in.ReadString('\n')
+		if !(slices.Contains(confirm, strings.TrimSpace(resp))){
 			slog.Debug("changes not accepted for mod lock file update")
 			return fmt.Errorf("changes not accepted for mod lock file update")
 		}
