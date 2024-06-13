@@ -176,6 +176,10 @@ func setPath(path string) (string, error) {
 		slog.Debug("working path set to current directory: " + setPath)
 		return (setPath + "/"), nil
 	} else {
+		// test to make sure path exists
+		if _, err := os.Stat(path); err != nil {
+			return path, fmt.Errorf(err.Error())
+		}
 		setPath = path
 		slog.Debug("working path set to source directory: " + setPath)
 	}

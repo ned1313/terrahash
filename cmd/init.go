@@ -25,7 +25,7 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Creates a mod lock file if one doesn't already exist.",
 	Long: `Init scans the current Terraform configuration and produces a mod lock
-	file if one doesn't already exist. This command will error if a mod lock file
+	file if one doesn't already exist. This command will warn if a mod lock file
 	is found or the Terraform configuration hasn't been initialized yet.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		slog.Debug("init command called")
