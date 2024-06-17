@@ -49,6 +49,25 @@ type modulesFile struct {
 
 const modFileName = ".terraform.module.lock.hcl"
 
+const testConfig = `provider "azurerm" {
+			features{}
+		}
+
+		resource "azurerm_resource_group" "test" {
+		  name = "terrahash-test"
+		  location = "East US"
+		}
+
+		module "vnet" {
+		  source  = "Azure/vnet/azurerm"
+		  version = "4.1.0"
+
+		    resource_group_name = azurerm_resource_group.test.name
+		    use_for_each = true
+		    vnet_location = azurerm_resource_group.test.location
+
+		}`
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() error {

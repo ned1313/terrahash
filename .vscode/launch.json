@@ -18,6 +18,14 @@
             "mode": "test",
             "program": "${workspaceFolder}/cmd/root_test.go",
             "showLog": true
+        },
+        {
+            "name": "Launch check test",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/cmd/check_test.go",
+            "showLog": true
         }
 
     ]
