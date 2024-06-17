@@ -151,12 +151,11 @@ func processModFile(path string) (modules, error){
 		}
 		defer moduleFile.Close()
 
-		// Process the modules.json file
 		slog.Debug("processing the mod lock file")
 
 		err = json.NewDecoder(moduleFile).Decode(&mods)
 		if err != nil {
-			return mods, fmt.Errorf("could not decode modules.json: %v", err)
+			return mods, fmt.Errorf("could not decode lock file: %v", err)
 		}
 		return mods, nil
 }

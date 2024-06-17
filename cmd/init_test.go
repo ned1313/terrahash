@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/gruntwork-io/terratest/modules/terraform"
 )
 
 func TestInitCmd(t *testing.T) {
@@ -71,23 +72,23 @@ func TestInitCmd(t *testing.T) {
 
 		expected := ""
 
+		//Assert no error
 		assert.Equal(t, expected, actual.String())
 	})
 
 	// Test case 3: No external modules found
 	t.Run("NoExternalModulesFound", func(t *testing.T) {
-		// Create a mod lock file in the temporary directory
-		modLockFile := tempDir + "/" + modFileName
-		file, _ := os.Create(modLockFile)
-
-		defer os.Remove(modLockFile)
-		file.WriteString(`{"Modules": {}}`)
 		//Create an empty Terraform configuration
 		terraformConfig := tempDir + "/main.tf"
-		file, _ = os.Create(terraformConfig)
+		file, _ := os.Create(terraformConfig)
 		defer os.Remove(terraformConfig)
 
 		file.WriteString(`locals { testing = "test" }`)
+
+		terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+			TerraformDir: tempDir,})
+
+		terraform.Init(t, terraformOptions)
 
 		actual := new(bytes.Buffer)
 		rootCmd.SetOut(actual)
@@ -97,12 +98,59 @@ func TestInitCmd(t *testing.T) {
 
 		expected := ""
 
+		// Assert no errors
 		assert.Equal(t, expected, actual.String())
+		// Assert mod lock file is not created
+		_, err := os.Stat(tempDir + "/" + modFileName)
+		assert.NotNil(t, err)
 	})
 
 	// Test case 4: External modules found
 	t.Run("ExternalModulesFound", func(t *testing.T) {
 		
-		// TODO: Add assertions for the expected output
+		//Create Terraform configuration with external module
+		terraformConfig := tempDir + "/main.tf"
+		file, _ := os.Create(terraformConfig)
+		defer os.Remove(terraformConfig)
+
+		file.WriteString(`
+		provider "azurerm" {
+			features{}
+		}
+
+		resource "azurerm_resource_group" "test" {
+		  name = "terrahash-test"
+		  location = "East US"
+		}
+
+		module "vnet" {
+		  source  = "Azure/vnet/azurerm"
+		  version = "4.1.0"
+
+		    resource_group_name = azurerm_resource_group.test.name
+		    use_for_each = true
+		    vnet_location = azurerm_resource_group.test.location
+
+		}`)
+
+		terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+			TerraformDir: tempDir,})
+
+		terraform.Init(t, terraformOptions)
+
+		actual := new(bytes.Buffer)
+		rootCmd.SetOut(actual)
+		rootCmd.SetErr(actual)
+		rootCmd.SetArgs([]string{"init", "--source", tempDir})
+		rootCmd.Execute()
+
+		expected := ""
+
+		// Assert no errors
+		assert.Equal(t, expected, actual.String())
+
+		//Assert mod lock file is created
+		_, err := os.Stat(tempDir + "/" + modFileName)
+		assert.Nil(t, err)
 	})
 }
